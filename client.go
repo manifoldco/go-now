@@ -9,9 +9,6 @@ import (
 	"strings"
 )
 
-// version contains the current package version
-const version = "dev"
-
 const apiURL = "https://api.zeit.co"
 
 // Client contains all methods used for making API requests
@@ -70,7 +67,7 @@ func (c Client) NewRequest(method, path string, body interface{}, v interface{})
 		return rErr
 	}
 
-	req.Header.Set("User-Agent", "go-now@"+version)
+	req.Header.Set("User-Agent", "go-now")
 	req.Header.Set("Authorization", "Bearer "+c.secret)
 	req.Header.Set("Content-Type", "application/json")
 
