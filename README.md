@@ -25,7 +25,7 @@ import "github.com/manifoldco/go-now"
 n := now.New("your-api-secret")
 
 pkg := map[string]interface{}{
-  "index.js": "require('http').Server((req, res) => { res.end('Hello World!'); });",
+  "index.js": "require('http').Server((req, res) => { res.end('Hello World!'); }).listen();",
   "package": map[string]interface{}{
     "name": "hello-world",
     "scripts": map[string]string{
