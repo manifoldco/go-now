@@ -56,18 +56,18 @@ func (c Client) NewRequest(method, path string, body interface{}, v interface{})
 	path = c.URL + path
 
 	var req *http.Request
-	var err error
+	var rErr error
 	if body != nil {
 		jsonBytes, err := json.Marshal(body)
 		if err != nil {
 			return err
 		}
-		req, err = http.NewRequest(method, path, bytes.NewBuffer(jsonBytes))
+		req, rErr = http.NewRequest(method, path, bytes.NewBuffer(jsonBytes))
 	} else {
-		req, err = http.NewRequest(method, path, nil)
+		req, rErr = http.NewRequest(method, path, nil)
 	}
-	if err != nil {
-		return err
+	if rErr != nil {
+		return rErr
 	}
 
 	req.Header.Set("User-Agent", "go-now@"+version)

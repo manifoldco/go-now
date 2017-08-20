@@ -1,0 +1,8 @@
+required = [
+  "github.com/golang/lint/golint",
+  "honnef.co/go/simple/cmd/gosimple",
+  "github.com/client9/misspell/cmd/misspell",
+  "github.com/gordonklaus/ineffassign",
+  "github.com/tsenart/deadcode",
+  "github.com/alecthomas/gometalinter"
+]
