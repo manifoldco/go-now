@@ -19,7 +19,7 @@ go get github.com/manifoldco/go-now
 
 ## Example
 
-```
+```go
 import "github.com/manifoldco/go-now"
 
 n := now.New("your-api-secret")
