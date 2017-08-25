@@ -10,6 +10,7 @@ const defaultHTTPTimeout = 80 * time.Second
 // Now contains all the methods required for interacting with Zeit Now's API
 type Now struct {
 	client      *Client
+	Certs       *CertsClient
 	Deployments *DeploymentsClient
 	Domains     *DomainsClient
 	Plans       *PlansClient
@@ -32,6 +33,7 @@ func New(secret string) *Now {
 			},
 		},
 	}
+	n.Certs = &CertsClient{client: n.client}
 	n.Deployments = &DeploymentsClient{client: n.client}
 	n.Domains = &DomainsClient{client: n.client}
 	n.Plans = &PlansClient{client: n.client}
