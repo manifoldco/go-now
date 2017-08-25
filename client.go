@@ -28,14 +28,34 @@ func (c Client) SetHTTPClient(h *http.Client) {
 	c.HTTPClient = h
 }
 
-// ErrResponse represents the body returned on error
-type ErrResponse struct {
+// ErrAPIResponse represents the body returned on error
+type ErrAPIResponse struct {
 	StatusCode int
-	Response   APIError `json:"err"`
+	Err        *APIError `json:"err,omitempty"`
+	AltErr     *APIError `json:"error,omitempty"`
 }
 
+// APIError returns the APIError depending on which response was given from the api
+// Sometimes Zeit returns `err` sometimes `error`
+// XXX: Reported to Zeit #now slack channel on Aug 24, 2017
+func (e ErrAPIResponse) APIError() APIError {
+	err := e.AltErr
+	if e.Err != nil {
+		err = e.Err
+	}
+	return *err
+}
+
+// ErrResponse represents the body returned on error
+type ErrResponse struct {
+	StatusCode int      `json:"status_code"`
+	APIError   APIError `json:"err"`
+}
+
+// Error returns the error string
 func (e ErrResponse) Error() string {
-	return fmt.Sprintf("%s (%d): %s", e.Response.Code, e.StatusCode, e.Response.Message)
+	err := e.APIError
+	return fmt.Sprintf("%s (%d): %s", err.Code, e.StatusCode, err.Message)
 }
 
 // APIError contains the error response fields
@@ -88,11 +108,14 @@ func (c Client) NewRequest(method, path string, body interface{}, v interface{})
 		}
 		return nil
 	default:
-		apiErr := ErrResponse{StatusCode: res.StatusCode}
+		apiErr := ErrAPIResponse{}
 		marshalErr := json.Unmarshal(resBody, &apiErr)
 		if marshalErr != nil {
 			return marshalErr
 		}
-		return apiErr
+		return ErrResponse{
+			StatusCode: res.StatusCode,
+			APIError:   apiErr.APIError(),
+		}
 	}
 }
