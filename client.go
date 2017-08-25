@@ -57,7 +57,7 @@ type ZeitError struct {
 }
 
 // NewRequest performs an authenticated request for the given params
-func (c Client) NewRequest(method, path string, body interface{}, v interface{}) ClientError {
+func (c Client) NewRequest(method, path string, body interface{}, v interface{}, headers *map[string]string) ClientError {
 	if !strings.HasPrefix(path, "/") {
 		path = "/" + path
 	}
@@ -78,9 +78,14 @@ func (c Client) NewRequest(method, path string, body interface{}, v interface{})
 		return NewError(rErr.Error())
 	}
 
+	req.Header.Set("Content-Type", "application/json")
+	if headers != nil {
+		for k, v := range *headers {
+			req.Header.Set(k, v)
+		}
+	}
 	req.Header.Set("User-Agent", "go-now")
 	req.Header.Set("Authorization", "Bearer "+c.secret)
-	req.Header.Set("Content-Type", "application/json")
 
 	// Optionally add teamID to every request
 	if c.teamID != "" {

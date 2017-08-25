@@ -13,16 +13,21 @@ type DomainsClient struct {
 
 // New creates a new Domain
 func (c DomainsClient) New(domainName string, external bool) (Domain, ClientError) {
-	d := Domain{}
-	params := domainParams{
+	return c.NewFromParams(DomainParams{
 		Name:       domainName,
 		IsExternal: external,
-	}
-	err := c.client.NewRequest("POST", domainsEndpoint, params, &d)
+	})
+}
+
+// NewFromParams creates a new Domain from params
+func (c DomainsClient) NewFromParams(params DomainParams) (Domain, ClientError) {
+	d := Domain{}
+	err := c.client.NewRequest("POST", domainsEndpoint, params, &d, nil)
 	return d, err
 }
 
-type domainParams struct {
+// DomainParams contains all fields for domain create
+type DomainParams struct {
 	Name       string `json:"name"`
 	IsExternal bool   `json:"isExternal"`
 }
@@ -30,7 +35,7 @@ type domainParams struct {
 // List retrieves a list of all the domains under the account
 func (c DomainsClient) List() ([]Domain, ClientError) {
 	d := &domainListResponse{}
-	err := c.client.NewRequest("GET", domainsEndpoint, nil, d)
+	err := c.client.NewRequest("GET", domainsEndpoint, nil, d, nil)
 	return d.Domains, err
 }
 
@@ -40,5 +45,5 @@ type domainListResponse struct {
 
 // Delete deletes the domain by its ID
 func (c DomainsClient) Delete(domainName string) ClientError {
-	return c.client.NewRequest("DELETE", fmt.Sprintf("%s/%s", domainsEndpoint, domainName), nil, nil)
+	return c.client.NewRequest("DELETE", fmt.Sprintf("%s/%s", domainsEndpoint, domainName), nil, nil, nil)
 }

@@ -10,7 +10,7 @@ type PlansClient struct {
 // Current returns the authenticated user's subscription
 func (c PlansClient) Current() (Subscription, ClientError) {
 	r := planResponse{}
-	err := c.client.NewRequest("GET", planEndpoint, nil, &r)
+	err := c.client.NewRequest("GET", planEndpoint, nil, &r, nil)
 	return r.Subscription, err
 }
 

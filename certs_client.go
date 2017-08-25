@@ -13,26 +13,32 @@ type CertsClient struct {
 
 // New creates a new cert
 func (c CertsClient) New(domainNames []string) (*Cert, ClientError) {
-	var crt *Cert
-	params := certParams{
+	params := CertParams{
 		DomainNames: domainNames,
 	}
-	err := c.client.NewRequest("POST", certsEndpoint, params, crt)
+	return c.NewFromParams(params)
+}
+
+// NewFromParams creates a new cert from params
+func (c CertsClient) NewFromParams(params CertParams) (*Cert, ClientError) {
+	var crt *Cert
+	err := c.client.NewRequest("POST", certsEndpoint, params, crt, nil)
 	return crt, err
 }
 
 // Renew renews and existing cert
 func (c CertsClient) Renew(domainNames []string) (*Cert, ClientError) {
 	var crt *Cert
-	params := certParams{
+	params := CertParams{
 		DomainNames: domainNames,
 		Renew:       true,
 	}
-	err := c.client.NewRequest("POST", certsEndpoint, params, &crt)
+	err := c.client.NewRequest("POST", certsEndpoint, params, &crt, nil)
 	return crt, err
 }
 
-type certParams struct {
+// CertParams contains all fields for create
+type CertParams struct {
 	DomainNames []string `json:"domains"`
 	Renew       bool     `json:"renew"`
 }
@@ -40,7 +46,7 @@ type certParams struct {
 // List retrieves a list of all the domains under the account
 func (c CertsClient) List() ([]*Cert, ClientError) {
 	crt := &certListResponse{}
-	err := c.client.NewRequest("GET", certsEndpoint, nil, crt)
+	err := c.client.NewRequest("GET", certsEndpoint, nil, crt, nil)
 	return crt.Certs, err
 }
 
@@ -50,5 +56,5 @@ type certListResponse struct {
 
 // Delete deletes the domain by its ID
 func (c CertsClient) Delete(domainName string) ClientError {
-	return c.client.NewRequest("DELETE", fmt.Sprintf("%s/%s", certsEndpoint, domainName), nil, nil)
+	return c.client.NewRequest("DELETE", fmt.Sprintf("%s/%s", certsEndpoint, domainName), nil, nil, nil)
 }
