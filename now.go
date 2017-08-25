@@ -11,6 +11,10 @@ const defaultHTTPTimeout = 80 * time.Second
 type Now struct {
 	client      *Client
 	Deployments *DeploymentsClient
+	Domains     *DomainsClient
+	Plans       *PlansClient
+	Teams       *TeamsClient
+}
 
 // SetTeamID updates the client's global team_id value
 func (n Now) SetTeamID(teamID string) {
@@ -29,5 +33,8 @@ func New(secret string) *Now {
 		},
 	}
 	n.Deployments = &DeploymentsClient{client: n.client}
+	n.Domains = &DomainsClient{client: n.client}
+	n.Plans = &PlansClient{client: n.client}
+	n.Teams = &TeamsClient{client: n.client}
 	return &n
 }
