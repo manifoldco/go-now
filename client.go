@@ -14,6 +14,7 @@ const apiURL = "https://api.zeit.co"
 // Client contains all methods used for making API requests
 type Client struct {
 	secret     string
+	teamID     string
 	URL        string
 	HTTPClient *http.Client
 }
@@ -90,6 +91,13 @@ func (c Client) NewRequest(method, path string, body interface{}, v interface{})
 	req.Header.Set("User-Agent", "go-now")
 	req.Header.Set("Authorization", "Bearer "+c.secret)
 	req.Header.Set("Content-Type", "application/json")
+
+	// Optionally add teamID to every request
+	if c.teamID != "" {
+		q := req.URL.Query()
+		q.Add("teamId", c.teamID)
+		req.URL.RawQuery = q.Encode()
+	}
 
 	res, err := c.HTTPClient.Do(req)
 	if err != nil {

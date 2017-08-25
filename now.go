@@ -11,6 +11,10 @@ const defaultHTTPTimeout = 80 * time.Second
 type Now struct {
 	client      *Client
 	Deployments *DeploymentsClient
+
+// SetTeamID updates the client's global team_id value
+func (n Now) SetTeamID(teamID string) {
+	n.client.teamID = teamID
 }
 
 // New returns an authenticated Now api client
