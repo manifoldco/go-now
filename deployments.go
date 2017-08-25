@@ -64,3 +64,11 @@ func (d DeploymentFile) GetName() string {
 func (d DeploymentFile) GetType() DeploymentContentType {
 	return d.Type
 }
+
+// Alias represents a deployment alias object
+type Alias struct {
+	UID     string     `json:"uid,omitempty"`
+	OldUID  string     `json:"oldId,omitempty"`
+	Alias   string     `json:"alias"`
+	Created *time.Time `json:"created,omitempty"`
+}

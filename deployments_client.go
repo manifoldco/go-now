@@ -6,27 +6,49 @@ import (
 	"fmt"
 )
 
-// DeploymentClient contains the methods for the Deployment API
-type DeploymentClient struct {
+// DeploymentsClient contains the methods for the Deployment API
+type DeploymentsClient struct {
 	client *Client
 }
 
 // New creates a new Deployment
-func (c DeploymentClient) New(params map[string]interface{}) (Deployment, error) {
+func (c DeploymentsClient) New(params map[string]interface{}) (Deployment, error) {
 	d := Deployment{}
 	err := c.client.NewRequest("POST", "/now/deployments", params, &d)
 	return d, err
 }
 
 // Get retrieves a deployment by its ID
-func (c DeploymentClient) Get(ID string) (Deployment, error) {
+func (c DeploymentsClient) Get(ID string) (Deployment, error) {
 	d := Deployment{}
 	err := c.client.NewRequest("GET", fmt.Sprintf("/now/deployments/%s", ID), nil, &d)
 	return d, err
 }
 
+// Alias applies the supplied alias to the given deployment ID
+func (c DeploymentsClient) Alias(ID, alias string) (Alias, error) {
+	a := Alias{}
+	err := c.client.NewRequest("POST", fmt.Sprintf("/now/deployments/%s/aliases", ID), deploymentAliasParams{Alias: alias}, &a)
+	return a, err
+}
+
+type deploymentAliasParams struct {
+	Alias string `json:"alias"`
+}
+
+// ListAliases retrieves aliases of a deployment by its ID
+func (c DeploymentsClient) ListAliases(ID string) ([]Alias, error) {
+	a := &deploymentListAliasResponse{}
+	err := c.client.NewRequest("GET", fmt.Sprintf("/now/deployments/%s/aliases", ID), nil, a)
+	return a.Aliases, err
+}
+
+type deploymentListAliasResponse struct {
+	Aliases []Alias `json:"aliases"`
+}
+
 // Files retrieves files of a deployment by its ID
-func (c DeploymentClient) Files(ID string) ([]DeploymentContent, error) {
+func (c DeploymentsClient) Files(ID string) ([]DeploymentContent, error) {
 	var contents []DeploymentContent
 	var resp []json.RawMessage
 	err := c.client.NewRequest("GET", fmt.Sprintf("/now/deployments/%s/files", ID), nil, &resp)
@@ -60,18 +82,17 @@ func (c DeploymentClient) Files(ID string) ([]DeploymentContent, error) {
 }
 
 // List retrieves a list of all the deployments under the account
-func (c DeploymentClient) List() ([]Deployment, error) {
-	d := &DeploymentListResponse{}
+func (c DeploymentsClient) List() ([]Deployment, error) {
+	d := &deploymentListResponse{}
 	err := c.client.NewRequest("GET", "/now/deployments", nil, d)
 	return d.Deployments, err
 }
 
-// DeploymentListResponse represents the response structure of GET /now/deployments
-type DeploymentListResponse struct {
+type deploymentListResponse struct {
 	Deployments []Deployment `json:"deployments"`
 }
 
 // Delete deletes the deployment by its ID
-func (c DeploymentClient) Delete(ID string) error {
+func (c DeploymentsClient) Delete(ID string) error {
 	return c.client.NewRequest("DELETE", fmt.Sprintf("/now/deployments/%s", ID), nil, nil)
 }
