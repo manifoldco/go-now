@@ -29,45 +29,35 @@ func (c Client) SetHTTPClient(h *http.Client) {
 	c.HTTPClient = h
 }
 
-// ErrAPIResponse represents the body returned on error
-type ErrAPIResponse struct {
+// ErrZeitResponse represents the body returned on error
+type ErrZeitResponse struct {
 	StatusCode int
-	Err        *APIError `json:"err,omitempty"`
-	AltErr     *APIError `json:"error,omitempty"`
+	Err        *ZeitError `json:"err,omitempty"`
+	AltErr     *ZeitError `json:"error,omitempty"`
 }
 
-// APIError returns the APIError depending on which response was given from the api
+// ZeitError returns the ZeitError depending on which response was given from the api
 // Sometimes Zeit returns `err` sometimes `error`
 // XXX: Reported to Zeit #now slack channel on Aug 24, 2017
-func (e ErrAPIResponse) APIError() APIError {
-	err := e.AltErr
+func (e ErrZeitResponse) ZeitError() *ZeitError {
 	if e.Err != nil {
-		err = e.Err
+		return e.Err
 	}
-	return *err
+	if e.AltErr != nil {
+		return e.AltErr
+	}
+	return nil
 }
 
-// ErrResponse represents the body returned on error
-type ErrResponse struct {
-	StatusCode int      `json:"status_code"`
-	APIError   APIError `json:"err"`
-}
-
-// Error returns the error string
-func (e ErrResponse) Error() string {
-	err := e.APIError
-	return fmt.Sprintf("%s (%d): %s", err.Code, e.StatusCode, err.Message)
-}
-
-// APIError contains the error response fields
-type APIError struct {
+// ZeitError contains the api-specific error response fields
+type ZeitError struct {
 	Code    string `json:"code"`
 	Message string `json:"message"`
 	URL     string `json:"url"`
 }
 
 // NewRequest performs an authenticated request for the given params
-func (c Client) NewRequest(method, path string, body interface{}, v interface{}) error {
+func (c Client) NewRequest(method, path string, body interface{}, v interface{}) ClientError {
 	if !strings.HasPrefix(path, "/") {
 		path = "/" + path
 	}
@@ -78,14 +68,14 @@ func (c Client) NewRequest(method, path string, body interface{}, v interface{})
 	if body != nil {
 		jsonBytes, err := json.Marshal(body)
 		if err != nil {
-			return err
+			return NewError(err.Error())
 		}
 		req, rErr = http.NewRequest(method, path, bytes.NewBuffer(jsonBytes))
 	} else {
 		req, rErr = http.NewRequest(method, path, nil)
 	}
 	if rErr != nil {
-		return rErr
+		return NewError(rErr.Error())
 	}
 
 	req.Header.Set("User-Agent", "go-now")
@@ -101,29 +91,33 @@ func (c Client) NewRequest(method, path string, body interface{}, v interface{})
 
 	res, err := c.HTTPClient.Do(req)
 	if err != nil {
-		return err
+		return NewError(err.Error())
 	}
 	defer res.Body.Close()
 
 	resBody, err := ioutil.ReadAll(res.Body)
 	if err != nil {
-		return err
+		return NewError(err.Error())
 	}
 	switch res.StatusCode {
 	case 200, 201, 204:
-		if v != nil {
-			return json.Unmarshal(resBody, v)
+		if v != nil && len(resBody) > 0 {
+			err := json.Unmarshal(resBody, v)
+			if err != nil {
+				return NewError("Failed to read response")
+			}
 		}
 		return nil
+	case 304:
+		return nil
 	default:
-		apiErr := ErrAPIResponse{}
-		marshalErr := json.Unmarshal(resBody, &apiErr)
-		if marshalErr != nil {
-			return marshalErr
+		zeitErrResp := ErrZeitResponse{}
+		if len(resBody) > 0 {
+			marshalErr := json.Unmarshal(resBody, &zeitErrResp)
+			if marshalErr != nil {
+				return NewError("Invalid API response")
+			}
 		}
-		return ErrResponse{
-			StatusCode: res.StatusCode,
-			APIError:   apiErr.APIError(),
-		}
+		return NewZeitError(res.StatusCode, zeitErrResp.ZeitError())
 	}
 }

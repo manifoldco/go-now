@@ -2,9 +2,10 @@ package now
 
 import (
 	"encoding/json"
-	"errors"
 	"fmt"
 )
+
+const deploymentsEndpoint = "/now/deployments"
 
 // DeploymentsClient contains the methods for the Deployment API
 type DeploymentsClient struct {
@@ -12,23 +13,23 @@ type DeploymentsClient struct {
 }
 
 // New creates a new Deployment
-func (c DeploymentsClient) New(params map[string]interface{}) (Deployment, error) {
+func (c DeploymentsClient) New(params map[string]interface{}) (Deployment, ClientError) {
 	d := Deployment{}
-	err := c.client.NewRequest("POST", "/now/deployments", params, &d)
+	err := c.client.NewRequest("POST", deploymentsEndpoint, params, &d)
 	return d, err
 }
 
 // Get retrieves a deployment by its ID
-func (c DeploymentsClient) Get(ID string) (Deployment, error) {
+func (c DeploymentsClient) Get(ID string) (Deployment, ClientError) {
 	d := Deployment{}
-	err := c.client.NewRequest("GET", fmt.Sprintf("/now/deployments/%s", ID), nil, &d)
+	err := c.client.NewRequest("GET", fmt.Sprintf("%s/%s", deploymentsEndpoint, ID), nil, &d)
 	return d, err
 }
 
 // Alias applies the supplied alias to the given deployment ID
-func (c DeploymentsClient) Alias(ID, alias string) (Alias, error) {
-	a := Alias{}
-	err := c.client.NewRequest("POST", fmt.Sprintf("/now/deployments/%s/aliases", ID), deploymentAliasParams{Alias: alias}, &a)
+func (c DeploymentsClient) Alias(ID, alias string) (Alias, ClientError) {
+	a := Alias{Alias: alias}
+	err := c.client.NewRequest("POST", fmt.Sprintf("%s/%s/aliases", deploymentsEndpoint, ID), deploymentAliasParams{Alias: alias}, &a)
 	return a, err
 }
 
@@ -37,9 +38,9 @@ type deploymentAliasParams struct {
 }
 
 // ListAliases retrieves aliases of a deployment by its ID
-func (c DeploymentsClient) ListAliases(ID string) ([]Alias, error) {
+func (c DeploymentsClient) ListAliases(ID string) ([]Alias, ClientError) {
 	a := &deploymentListAliasResponse{}
-	err := c.client.NewRequest("GET", fmt.Sprintf("/now/deployments/%s/aliases", ID), nil, a)
+	err := c.client.NewRequest("GET", fmt.Sprintf("%s/%s/aliases", deploymentsEndpoint, ID), nil, a)
 	return a.Aliases, err
 }
 
@@ -48,17 +49,17 @@ type deploymentListAliasResponse struct {
 }
 
 // Files retrieves files of a deployment by its ID
-func (c DeploymentsClient) Files(ID string) ([]DeploymentContent, error) {
+func (c DeploymentsClient) Files(ID string) ([]DeploymentContent, ClientError) {
 	var contents []DeploymentContent
 	var resp []json.RawMessage
-	err := c.client.NewRequest("GET", fmt.Sprintf("/now/deployments/%s/files", ID), nil, &resp)
+	err := c.client.NewRequest("GET", fmt.Sprintf("%s/%s/files", deploymentsEndpoint, ID), nil, &resp)
 	for _, r := range resp {
 		var obj map[string]interface{}
 
 		// Extract the type field
 		err := json.Unmarshal(r, &obj)
 		if err != nil {
-			return contents, err
+			return contents, NewError(err.Error())
 		}
 
 		// Unmarshal into appropriate type
@@ -69,12 +70,11 @@ func (c DeploymentsClient) Files(ID string) ([]DeploymentContent, error) {
 		case "file":
 			content = &DeploymentFile{}
 		default:
-			err = errors.New("Unknown file type")
-			return contents, err
+			return contents, NewError("Unknown file type")
 		}
 		err = json.Unmarshal(r, &content)
 		if err != nil {
-			return contents, err
+			return contents, NewError(err.Error())
 		}
 		contents = append(contents, content)
 	}
@@ -82,9 +82,9 @@ func (c DeploymentsClient) Files(ID string) ([]DeploymentContent, error) {
 }
 
 // List retrieves a list of all the deployments under the account
-func (c DeploymentsClient) List() ([]Deployment, error) {
+func (c DeploymentsClient) List() ([]Deployment, ClientError) {
 	d := &deploymentListResponse{}
-	err := c.client.NewRequest("GET", "/now/deployments", nil, d)
+	err := c.client.NewRequest("GET", deploymentsEndpoint, nil, d)
 	return d.Deployments, err
 }
 
@@ -93,6 +93,6 @@ type deploymentListResponse struct {
 }
 
 // Delete deletes the deployment by its ID
-func (c DeploymentsClient) Delete(ID string) error {
-	return c.client.NewRequest("DELETE", fmt.Sprintf("/now/deployments/%s", ID), nil, nil)
+func (c DeploymentsClient) Delete(ID string) ClientError {
+	return c.client.NewRequest("DELETE", fmt.Sprintf("%s/%s", deploymentsEndpoint, ID), nil, nil)
 }
