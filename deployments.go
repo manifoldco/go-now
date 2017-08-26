@@ -4,6 +4,15 @@ import (
 	"time"
 )
 
+// IncompleteDeployment is the contents of a deploy object before upload
+type IncompleteDeployment struct {
+	ID        string   `json:"deploymentID"`
+	URL       string   `json:"url"`
+	TotalSize int      `json:"totalSize"`
+	Missing   []string `json:"missing"`
+	Warnings  []string `json:"warnings"`
+}
+
 // Deployment is the contents of a deploy object
 type Deployment struct {
 	UID            string     `json:"uid"`

@@ -35,7 +35,7 @@
   branch = "master"
   name = "github.com/gordonklaus/ineffassign"
   packages = ["."]
-  revision = "08cd83b3f513abe575f40d23acf2ae79088128bb"
+  revision = "da3d65debb9bff70fcfb6f277a8db31e8200de20"
 
 [[projects]]
   branch = "master"
@@ -62,6 +62,12 @@
   version = "v1.0.0"
 
 [[projects]]
+  name = "github.com/ryanuber/go-glob"
+  packages = ["."]
+  revision = "572520ed46dbddaed19ea3d9541bdd0494163693"
+  version = "v0.1"
+
+[[projects]]
   branch = "master"
   name = "github.com/tsenart/deadcode"
   packages = ["."]
@@ -71,7 +77,7 @@
   branch = "master"
   name = "golang.org/x/tools"
   packages = ["go/ast/astutil","go/buildutil","go/gcexportdata","go/gcimporter15","go/loader","go/types/typeutil"]
-  revision = "84a35ef54dff3c5596983e180ec10919fc432242"
+  revision = "1807494da808122833b9bd8e3e5fa179ef237d41"
 
 [[projects]]
   branch = "v3-unstable"
@@ -106,6 +112,6 @@
 [solve-meta]
   analyzer-name = "dep"
   analyzer-version = 1
-  inputs-digest = "0af88241355234007a2b2e93b252d291d9d6f1ebad131622d23f0a7d8e45309c"
+  inputs-digest = "25e84a3b2d66b62d7ed0f9bc396088386a39c2ac2c2bad976e6f5d50aed182bb"
   solver-name = "gps-cdcl"
   solver-version = 1

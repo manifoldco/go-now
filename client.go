@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"io/ioutil"
 	"net/http"
+	"os"
 	"strings"
 )
 
@@ -56,6 +57,21 @@ type ZeitError struct {
 	URL     string `json:"url"`
 }
 
+// NewFileRequest performs an authenticated file upload for the given params
+func (c Client) NewFileRequest(method, path string, file *os.File, v interface{}, headers *map[string]string) ClientError {
+	if !strings.HasPrefix(path, "/") {
+		path = "/" + path
+	}
+	path = c.URL + path
+
+	req, err := http.NewRequest(method, path, file)
+	if err != nil {
+		return NewError(err.Error())
+	}
+
+	return c.performRequest(req, headers, v)
+}
+
 // NewRequest performs an authenticated request for the given params
 func (c Client) NewRequest(method, path string, body interface{}, v interface{}, headers *map[string]string) ClientError {
 	if !strings.HasPrefix(path, "/") {
@@ -78,6 +94,10 @@ func (c Client) NewRequest(method, path string, body interface{}, v interface{},
 		return NewError(rErr.Error())
 	}
 
+	return c.performRequest(req, headers, v)
+}
+
+func (c Client) performRequest(req *http.Request, headers *map[string]string, v interface{}) ClientError {
 	req.Header.Set("Content-Type", "application/json")
 	if headers != nil {
 		for k, v := range *headers {
@@ -94,16 +114,19 @@ func (c Client) NewRequest(method, path string, body interface{}, v interface{},
 		req.URL.RawQuery = q.Encode()
 	}
 
+	// Perform the request
 	res, err := c.HTTPClient.Do(req)
 	if err != nil {
 		return NewError(err.Error())
 	}
 	defer res.Body.Close()
 
+	// Read and triage the response
 	resBody, err := ioutil.ReadAll(res.Body)
 	if err != nil {
 		return NewError(err.Error())
 	}
+	fmt.Println("body:\n", string(resBody))
 	switch res.StatusCode {
 	case 200, 201, 204:
 		if v != nil && len(resBody) > 0 {

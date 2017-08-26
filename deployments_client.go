@@ -3,10 +3,16 @@ package now
 import (
 	"encoding/json"
 	"fmt"
+	"os"
+	"strconv"
+	"strings"
 )
 
-const createDeploymentEndpoint = "/now/create"
-const deploymentsEndpoint = "/now/deployments"
+const (
+	endpointSync             = "/now/sync"
+	endpointCreateDeployment = "/now/create"
+	endpointDeployments      = "/now/deployments"
+)
 
 // DeploymentsClient contains the methods for the Deployment API
 type DeploymentsClient struct {
@@ -14,23 +20,50 @@ type DeploymentsClient struct {
 }
 
 // New creates a new Deployment
-func (c DeploymentsClient) New(params map[string]interface{}) (Deployment, ClientError) {
-	d := Deployment{}
-	err := c.client.NewRequest("POST", createDeploymentEndpoint, params, &d, nil)
+func (c DeploymentsClient) New(params DeploymentParams) (IncompleteDeployment, ClientError) {
+	d := IncompleteDeployment{}
+	err := c.client.NewRequest("POST", endpointCreateDeployment, params, &d, nil)
+	// TODO warn about invalid files, or size issues
 	return d, err
+}
+
+// DeploymentParams contains all fields necessary to create a deployment
+type DeploymentParams struct {
+	Env         map[string]string `json:"env"`
+	Public      bool              `json:"public"`
+	ForceNew    bool              `json:"forceNew"`
+	ForceSync   bool              `json:"forceSync"`
+	Name        string            `json:"name"`
+	Description string            `json:"description"`
+	Type        string            `json:"deploymentType"`
+	Files       []FileInfo        `json:"files"`
+}
+
+// Upload performs an upload of the given file to the specified deployment
+func (c DeploymentsClient) Upload(deploymentID, sha string, names []string, size int64, data *os.File) ClientError {
+	headers := map[string]string{
+		"Content-Type":              "application/octet-stream",
+		"Content-Transfer-Encoding": "binary",
+		"Content-Length":            strconv.Itoa(int(size)),
+		"x-now-deployment-id":       deploymentID,
+		"x-now-sha":                 sha,
+		"x-now-file":                strings.Join(names, ","),
+		"x-now-size":                strconv.Itoa(int(size)),
+	}
+	return c.client.NewFileRequest("POST", endpointSync, data, nil, &headers)
 }
 
 // Get retrieves a deployment by its ID
 func (c DeploymentsClient) Get(ID string) (Deployment, ClientError) {
 	d := Deployment{}
-	err := c.client.NewRequest("GET", fmt.Sprintf("%s/%s", deploymentsEndpoint, ID), nil, &d, nil)
+	err := c.client.NewRequest("GET", fmt.Sprintf("%s/%s", endpointDeployments, ID), nil, &d, nil)
 	return d, err
 }
 
 // Alias applies the supplied alias to the given deployment ID
 func (c DeploymentsClient) Alias(ID, alias string) (Alias, ClientError) {
 	a := Alias{Alias: alias}
-	err := c.client.NewRequest("POST", fmt.Sprintf("%s/%s/aliases", deploymentsEndpoint, ID), DeploymentAliasParams{Alias: alias}, &a, nil)
+	err := c.client.NewRequest("POST", fmt.Sprintf("%s/%s/aliases", endpointDeployments, ID), DeploymentAliasParams{Alias: alias}, &a, nil)
 	return a, err
 }
 
@@ -42,7 +75,7 @@ type DeploymentAliasParams struct {
 // ListAliases retrieves aliases of a deployment by its ID
 func (c DeploymentsClient) ListAliases(ID string) ([]Alias, ClientError) {
 	a := &deploymentListAliasResponse{}
-	err := c.client.NewRequest("GET", fmt.Sprintf("%s/%s/aliases", deploymentsEndpoint, ID), nil, a, nil)
+	err := c.client.NewRequest("GET", fmt.Sprintf("%s/%s/aliases", endpointDeployments, ID), nil, a, nil)
 	return a.Aliases, err
 }
 
@@ -54,7 +87,7 @@ type deploymentListAliasResponse struct {
 func (c DeploymentsClient) Files(ID string) ([]DeploymentContent, ClientError) {
 	var contents []DeploymentContent
 	var resp []json.RawMessage
-	err := c.client.NewRequest("GET", fmt.Sprintf("%s/%s/files", deploymentsEndpoint, ID), nil, &resp, nil)
+	err := c.client.NewRequest("GET", fmt.Sprintf("%s/%s/files", endpointDeployments, ID), nil, &resp, nil)
 	for _, r := range resp {
 		var obj map[string]interface{}
 
@@ -86,7 +119,7 @@ func (c DeploymentsClient) Files(ID string) ([]DeploymentContent, ClientError) {
 // List retrieves a list of all the deployments under the account
 func (c DeploymentsClient) List() ([]Deployment, ClientError) {
 	d := &deploymentListResponse{}
-	err := c.client.NewRequest("GET", deploymentsEndpoint, nil, d, nil)
+	err := c.client.NewRequest("GET", endpointDeployments, nil, d, nil)
 	return d.Deployments, err
 }
 
@@ -96,5 +129,5 @@ type deploymentListResponse struct {
 
 // Delete deletes the deployment by its ID
 func (c DeploymentsClient) Delete(ID string) ClientError {
-	return c.client.NewRequest("DELETE", fmt.Sprintf("%s/%s", deploymentsEndpoint, ID), nil, nil, nil)
+	return c.client.NewRequest("DELETE", fmt.Sprintf("%s/%s", endpointDeployments, ID), nil, nil, nil)
 }
