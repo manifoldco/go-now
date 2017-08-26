@@ -42,13 +42,11 @@ type DeploymentParams struct {
 // Upload performs an upload of the given file to the specified deployment
 func (c DeploymentsClient) Upload(deploymentID, sha string, names []string, size int64, data *os.File) ClientError {
 	headers := map[string]string{
-		"Content-Type":              "application/octet-stream",
-		"Content-Transfer-Encoding": "binary",
-		"Content-Length":            strconv.Itoa(int(size)),
-		"x-now-deployment-id":       deploymentID,
-		"x-now-sha":                 sha,
-		"x-now-file":                strings.Join(names, ","),
-		"x-now-size":                strconv.Itoa(int(size)),
+		"Content-Type":        "application/octet-stream",
+		"x-now-deployment-id": deploymentID,
+		"x-now-sha":           sha,
+		"x-now-file":          strings.Join(names, ","),
+		"x-now-size":          strconv.Itoa(int(size)),
 	}
 	return c.client.NewFileRequest("POST", endpointSync, data, nil, &headers)
 }
