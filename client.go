@@ -126,7 +126,6 @@ func (c Client) performRequest(req *http.Request, headers *map[string]string, v 
 	if err != nil {
 		return NewError(err.Error())
 	}
-	fmt.Println("body:\n", string(resBody))
 	switch res.StatusCode {
 	case 200, 201, 204:
 		if v != nil && len(resBody) > 0 {
