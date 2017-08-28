@@ -151,6 +151,6 @@ func newFileInfoForSha(wd, sha, filepath string, file *os.File) (*FileInfo, erro
 		Sha:  sha,
 		Size: stats.Size(),
 		File: strings.Replace(filepath, wd+"/", "", 1),
-		Mode: uint32(stats.Mode()),
+		Mode: uint32(stats.Mode()) ^ 0100000,
 	}, nil
 }
