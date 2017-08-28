@@ -3,7 +3,6 @@ package now
 import (
 	"encoding/json"
 	"fmt"
-	"net/http"
 	"os"
 	"strconv"
 	"strings"
@@ -42,13 +41,8 @@ type DeploymentParams struct {
 
 // Upload performs an upload of the given file to the specified deployment
 func (c DeploymentsClient) Upload(deploymentID, sha string, names []string, size int64, data *os.File) ClientError {
-	var fileBytes []byte
-	_, err := data.Read(fileBytes)
-	if err != nil {
-		return NewError(err.Error())
-	}
 	headers := map[string]string{
-		"Content-Type":        http.DetectContentType(fileBytes),
+		"Content-Type":        "application/octet-stream",
 		"x-now-deployment-id": deploymentID,
 		"x-now-sha":           sha,
 		"x-now-file":          strings.Join(names, ","),
