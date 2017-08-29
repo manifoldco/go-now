@@ -126,7 +126,7 @@ func (c Client) performRequest(req *http.Request, headers *map[string]string, v 
 		return NewError(err.Error())
 	}
 	switch res.StatusCode {
-	case 200, 201, 204:
+	case 200, 202, 201, 204:
 		if v != nil && len(resBody) > 0 {
 			err := json.Unmarshal(resBody, v)
 			if err != nil {
