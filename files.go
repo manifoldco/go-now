@@ -47,7 +47,45 @@ type FileHash struct {
 	Path  string
 }
 
-// NpmFiles returns a FileInfo array for a given npm package
+// PackageType infers the project's type
+func PackageType(dir string) string {
+	if _, err := os.Stat(filepath.Join(dir, "Dockerfile")); !os.IsNotExist(err) {
+		return "docker"
+	}
+	if _, err := os.Stat(filepath.Join(dir, "package.json")); !os.IsNotExist(err) {
+		return "npm"
+	}
+	return ""
+}
+
+// DockerFiles returns an array of paths for a given Docker project
+func DockerFiles(dir string) (*[]string, error) {
+	// TODO: make compliant with all config and ignore options
+	ignoreFiles := append([]string{}, defaultIgnorePaths...)
+
+	// Obey dockerignore file if exists
+	dockerIgnoreFiles, err := readIgnore(dir, ".dockerignore")
+	if err != nil {
+		return nil, err
+	}
+	ignoreFiles = append(ignoreFiles, dockerIgnoreFiles...)
+
+	// Obey gitignore file if exists
+	gitIgnoreFiles, err := readIgnore(dir, ".gitignore")
+	if err != nil {
+		return nil, err
+	}
+	ignoreFiles = append(ignoreFiles, gitIgnoreFiles...)
+
+	// Walk the directory of files
+	files, err := readDirFiles(dir, ignoreFiles)
+	if err != nil {
+		return nil, err
+	}
+	return &files, nil
+}
+
+// NpmFiles returns an array of paths for a given npm package
 func NpmFiles(dir string) (*[]string, error) {
 	// TODO: make compliant with all config and ignore options
 	ignoreFiles := append([]string{}, defaultIgnorePaths...)
@@ -66,10 +104,18 @@ func NpmFiles(dir string) (*[]string, error) {
 	}
 	ignoreFiles = append(ignoreFiles, gitIgnoreFiles...)
 
-	var files []string
-
 	// Walk the directory of files
-	err = filepath.Walk(dir, func(path string, f os.FileInfo, err error) error {
+	files, err := readDirFiles(dir, ignoreFiles)
+	if err != nil {
+		return nil, err
+	}
+
+	return &files, nil
+}
+
+func readDirFiles(dir string, ignoreFiles []string) ([]string, error) {
+	var files []string
+	err := filepath.Walk(dir, func(path string, f os.FileInfo, err error) error {
 		if err != nil {
 			return err
 		}
@@ -85,11 +131,7 @@ func NpmFiles(dir string) (*[]string, error) {
 		files = append(files, path)
 		return nil
 	})
-	if err != nil {
-		return nil, err
-	}
-
-	return &files, nil
+	return files, err
 }
 
 func readIgnore(dir, typ string) ([]string, error) {
