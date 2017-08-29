@@ -58,6 +58,26 @@ func PackageType(dir string) string {
 	return ""
 }
 
+// StaticFiles returns an array of paths for a given static project
+func StaticFiles(dir string) (*[]string, error) {
+	// TODO: make compliant with all config and ignore options
+	ignoreFiles := append([]string{}, defaultIgnorePaths...)
+
+	// Obey gitignore file if exists
+	gitIgnoreFiles, err := readIgnore(dir, ".gitignore")
+	if err != nil {
+		return nil, err
+	}
+	ignoreFiles = append(ignoreFiles, gitIgnoreFiles...)
+
+	// Walk the directory of files
+	files, err := readDirFiles(dir, ignoreFiles)
+	if err != nil {
+		return nil, err
+	}
+	return &files, nil
+}
+
 // DockerFiles returns an array of paths for a given Docker project
 func DockerFiles(dir string) (*[]string, error) {
 	// TODO: make compliant with all config and ignore options
