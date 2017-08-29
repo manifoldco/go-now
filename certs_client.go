@@ -12,7 +12,7 @@ type CertsClient struct {
 }
 
 // New creates a new cert
-func (c CertsClient) New(domainNames []string) (*Cert, ClientError) {
+func (c CertsClient) New(domainNames []string) (Cert, ClientError) {
 	params := CertParams{
 		DomainNames: domainNames,
 	}
@@ -20,15 +20,15 @@ func (c CertsClient) New(domainNames []string) (*Cert, ClientError) {
 }
 
 // NewFromParams creates a new cert from params
-func (c CertsClient) NewFromParams(params CertParams) (*Cert, ClientError) {
-	var crt *Cert
-	err := c.client.NewRequest("POST", certsEndpoint, params, crt, nil)
+func (c CertsClient) NewFromParams(params CertParams) (Cert, ClientError) {
+	crt := Cert{}
+	err := c.client.NewRequest("POST", certsEndpoint, params, &crt, nil)
 	return crt, err
 }
 
 // Renew renews and existing cert
-func (c CertsClient) Renew(domainNames []string) (*Cert, ClientError) {
-	var crt *Cert
+func (c CertsClient) Renew(domainNames []string) (Cert, ClientError) {
+	crt := Cert{}
 	params := CertParams{
 		DomainNames: domainNames,
 		Renew:       true,
