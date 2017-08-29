@@ -12,6 +12,7 @@ const (
 	endpointSync             = "/now/sync"
 	endpointCreateDeployment = "/now/create"
 	endpointDeployments      = "/now/deployments"
+	endpointDeploymentsID    = "/now/deployments/%s"
 )
 
 // DeploymentsClient contains the methods for the Deployment API
@@ -54,14 +55,30 @@ func (c DeploymentsClient) Upload(deploymentID, sha string, names []string, size
 // Get retrieves a deployment by its ID
 func (c DeploymentsClient) Get(ID string) (Deployment, ClientError) {
 	d := Deployment{}
-	err := c.client.NewRequest("GET", fmt.Sprintf("%s/%s", endpointDeployments, ID), nil, &d, nil)
+	err := c.client.NewRequest("GET", fmt.Sprintf(endpointDeploymentsID, ID), nil, &d, nil)
 	return d, err
+}
+
+// Scale sets the scale of a deployment to the number provided
+func (c DeploymentsClient) Scale(ID string, min, max int) (Deployment, ClientError) {
+	d := Deployment{}
+	err := c.client.NewRequest("POST", fmt.Sprintf(endpointDeploymentsID+"/instances", ID), ScaleParams{
+		Min: min,
+		Max: max,
+	}, &d, nil)
+	return d, err
+}
+
+// ScaleParams contains all fields necessary to set the scale of a deployment
+type ScaleParams struct {
+	Min int `json:"min"`
+	Max int `json:"max"`
 }
 
 // Alias applies the supplied alias to the given deployment ID
 func (c DeploymentsClient) Alias(ID, alias string) (Alias, ClientError) {
 	a := Alias{Alias: alias}
-	err := c.client.NewRequest("POST", fmt.Sprintf("%s/%s/aliases", endpointDeployments, ID), DeploymentAliasParams{Alias: alias}, &a, nil)
+	err := c.client.NewRequest("POST", fmt.Sprintf(endpointDeploymentsID+"/aliases", ID), DeploymentAliasParams{Alias: alias}, &a, nil)
 	return a, err
 }
 
@@ -73,7 +90,7 @@ type DeploymentAliasParams struct {
 // ListAliases retrieves aliases of a deployment by its ID
 func (c DeploymentsClient) ListAliases(ID string) ([]Alias, ClientError) {
 	a := &deploymentListAliasResponse{}
-	err := c.client.NewRequest("GET", fmt.Sprintf("%s/%s/aliases", endpointDeployments, ID), nil, a, nil)
+	err := c.client.NewRequest("GET", fmt.Sprintf(endpointDeploymentsID+"/aliases", ID), nil, a, nil)
 	return a.Aliases, err
 }
 
@@ -85,7 +102,7 @@ type deploymentListAliasResponse struct {
 func (c DeploymentsClient) Files(ID string) ([]DeploymentContent, ClientError) {
 	var contents []DeploymentContent
 	var resp []json.RawMessage
-	err := c.client.NewRequest("GET", fmt.Sprintf("%s/%s/files", endpointDeployments, ID), nil, &resp, nil)
+	err := c.client.NewRequest("GET", fmt.Sprintf(endpointDeploymentsID+"/files", ID), nil, &resp, nil)
 	for _, r := range resp {
 		var obj map[string]interface{}
 
@@ -127,5 +144,5 @@ type deploymentListResponse struct {
 
 // Delete deletes the deployment by its ID
 func (c DeploymentsClient) Delete(ID string) ClientError {
-	return c.client.NewRequest("DELETE", fmt.Sprintf("%s/%s", endpointDeployments, ID), nil, nil, nil)
+	return c.client.NewRequest("DELETE", fmt.Sprintf(endpointDeploymentsID, ID), nil, nil, nil)
 }
